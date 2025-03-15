@@ -1,0 +1,177 @@
+:root {
+    --primary-color: #4A90E2;
+    --background-color: #FFFFFF;
+    --toolbar-bg: #F5F7FA;
+    --text-color: #333333;
+    --border-radius: 12px;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: var(--toolbar-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #FFA500;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background: #4CAF50;
+    animation: none;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-button {
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+}
+
+.icon-button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.toolbar {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--toolbar-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+}
+
+.tool-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tool-button {
+    background: transparent;
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tool-button.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.color-picker {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.color-presets {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.color-preset {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+}
+
+.brush-size {
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+.brush-slider {
+    width: 100%;
+    max-width: 200px;
+}
+
+.canvas-container {
+    flex: 1;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+#drawingCanvas {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .color-picker {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .brush-size {
+        width: 100%;
+    }
+}
+
