@@ -8,12 +8,11 @@ class DrawingApp {
         this.currentTool = 'brush';
         this.currentColor = '#000000';
         this.brushSize = 5;
+        this.isMatched = false;
         
         this.initializeCanvas();
         this.setupEventListeners();
         this.connectToServer();
-        this.socket = io('http://localhost:3000');
-        this.socket.on('draw', this.handleServerDraw.bind(this));
     }
 
     initializeCanvas() {
@@ -76,25 +75,55 @@ class DrawingApp {
         // Action buttons
         document.querySelector('.clear-canvas').addEventListener('click', () => {
             this.clearCanvas();
-            this.socket?.emit('clear');
         });
 
         document.querySelector('.disconnect').addEventListener('click', () => {
             this.disconnect();
         });
+
+        document.querySelector('.search-match').addEventListener('click', () => {
+            if (!this.isMatched) {
+                this.searchMatch();
+            }
+        });
     }
 
     connectToServer() {
-        // In a real implementation, connect to your WebSocket server
-        setTimeout(() => {
+        this.socket = io('http://localhost:3000');
+        
+        this.socket.on('searching', () => {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Searching for partner...';
+        });
+
+        this.socket.on('matchFound', ({ roomId }) => {
             const statusDot = document.querySelector('.status-dot');
             const statusText = document.querySelector('.status-text');
             statusDot.classList.add('connected');
-            statusText.textContent = 'Connected!';
-        }, 2000);
+            statusText.textContent = 'Connected with partner!';
+            this.isMatched = true;
+            this.clearCanvas();
+        });
+
+        this.socket.on('partnerDisconnected', () => {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Partner disconnected. Click Search to find a new partner.';
+            this.isMatched = false;
+        });
+
+        this.socket.on('draw', this.handleServerDraw.bind(this));
+    }
+
+    searchMatch() {
+        this.socket.emit('searchMatch');
     }
 
     startDrawing(e) {
+        if (!this.isMatched) return;
         this.isDrawing = true;
         const rect = this.canvas.getBoundingClientRect();
         this.lastX = e.clientX - rect.left;
@@ -109,10 +138,10 @@ class DrawingApp {
         this.ctx.lineWidth = data.size;
         this.ctx.lineCap = 'round';
         this.ctx.stroke();
-      }
+    }
 
     draw(e) {
-        if (!this.isDrawing) return;
+        if (!this.isDrawing || !this.isMatched) return;
 
         const rect = this.canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -126,15 +155,13 @@ class DrawingApp {
         this.ctx.lineCap = 'round';
         this.ctx.stroke();
 
-        // Emit drawing data to server
-        this.socket?.emit('draw', {
+        this.socket.emit('draw', {
             x1: this.lastX,
             y1: this.lastY,
             x2: x,
             y2: y,
-            color: this.currentColor,
-            size: this.brushSize,
-            tool: this.currentTool
+            color: this.currentTool === 'eraser' ? '#FFFFFF' : this.currentColor,
+            size: this.brushSize
         });
 
         this.lastX = x;
@@ -150,15 +177,17 @@ class DrawingApp {
     }
 
     disconnect() {
-        this.socket?.disconnect();
-        const statusDot = document.querySelector('.status-dot');
-        const statusText = document.querySelector('.status-text');
-        statusDot.classList.remove('connected');
-        statusText.textContent = 'Disconnected';
+        if (this.socket) {
+            this.socket.disconnect();
+            this.isMatched = false;
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Disconnected';
+        }
     }
 
     rgbToHex(rgb) {
-        // Convert RGB string to hex
         const match = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
         if (!match) return rgb;
         const r = parseInt(match[1]);
@@ -168,8 +197,7 @@ class DrawingApp {
     }
 }
 
-// Initialize the app
 document.addEventListener('DOMContentLoaded', () => {
-    new DrawingApp();
+    const app = new DrawingApp();
+    app.searchMatch(); // Start searching for a match immediately
 });
-
