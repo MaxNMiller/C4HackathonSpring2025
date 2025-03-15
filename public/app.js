@@ -8,11 +8,12 @@ class DrawingApp {
         this.currentTool = 'brush';
         this.currentColor = '#000000';
         this.brushSize = 5;
-        this.socket = null;
-
+        
         this.initializeCanvas();
         this.setupEventListeners();
         this.connectToServer();
+        this.socket = io('http://localhost:3000');
+        this.socket.on('draw', this.handleServerDraw.bind(this));
     }
 
     initializeCanvas() {
@@ -99,6 +100,16 @@ class DrawingApp {
         this.lastX = e.clientX - rect.left;
         this.lastY = e.clientY - rect.top;
     }
+
+    handleServerDraw(data) {
+        this.ctx.beginPath();
+        this.ctx.moveTo(data.x1, data.y1);
+        this.ctx.lineTo(data.x2, data.y2);
+        this.ctx.strokeStyle = data.color;
+        this.ctx.lineWidth = data.size;
+        this.ctx.lineCap = 'round';
+        this.ctx.stroke();
+      }
 
     draw(e) {
         if (!this.isDrawing) return;
