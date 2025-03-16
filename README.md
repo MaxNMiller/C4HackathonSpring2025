@@ -55,3 +55,6 @@ npm start
 - Express
 - Socket.IO
 - HTML5 Canvas
+
+
+https://docs.google.com/presentation/d/1U4aP_uzbVLu-2cQlBeSIMxJbzC--Svh885E_GgKMnk8/edit?usp=sharing
