@@ -85,6 +85,10 @@ class DrawingApp {
             if (!this.isMatched) {
                 this.searchMatch();
             }
+            else
+            {
+                statusText.textContent = 'Leave this session before searching for a new session';
+            }
         });
     }
 
@@ -111,9 +115,19 @@ class DrawingApp {
             const statusDot = document.querySelector('.status-dot');
             const statusText = document.querySelector('.status-text');
             statusDot.classList.remove('connected');
-            statusText.textContent = 'Partner disconnected. Click Search to find a new partner.';
+            statusText.textContent = 'Your partner Disconneted. Click Search to find a new partner.';
             this.isMatched = false;
         });
+
+        this.socket.on('partnerLeftSession', () => {
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Your partner left the session. Click Search to find a new partner.';
+            this.isMatched = false;
+        });
+
+        this.socket.on("disconnect", this.disconnect.bind(this));
 
         this.socket.on('draw', this.handleServerDraw.bind(this));
     }
@@ -185,6 +199,18 @@ class DrawingApp {
             statusDot.classList.remove('connected');
             statusText.textContent = 'Disconnected';
         }
+    }
+
+    leaveSession()
+    {    
+        if (this.socket) {
+            //this.socket.disconnect();
+            this.isMatched = false;
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'You left the session.';
+        }  
     }
 
     rgbToHex(rgb) {
