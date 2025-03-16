@@ -104,7 +104,9 @@ class DrawingApp {
             this.socket.disconnect();
         }
         
-        this.socket = io('http://localhost:3000');
+        // Use the current window location to determine the socket.io server URL
+        const serverUrl = window.location.origin;
+        this.socket = io(serverUrl);
         
         this.socket.on('searching', () => {
             const statusDot = document.querySelector('.status-dot');
