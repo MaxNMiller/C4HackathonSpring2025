@@ -9,6 +9,7 @@ class DrawingApp {
         this.currentColor = '#000000';
         this.brushSize = 5;
         this.isMatched = false;
+        this.socket = null;
         
         this.initializeCanvas();
         this.setupEventListeners();
@@ -75,6 +76,9 @@ class DrawingApp {
         // Action buttons
         document.querySelector('.clear-canvas').addEventListener('click', () => {
             this.clearCanvas();
+            if (this.isMatched && this.socket) {
+                this.socket.emit('clearCanvas');
+            }
         });
 
         document.querySelector('.disconnect').addEventListener('click', () => {
@@ -83,16 +87,23 @@ class DrawingApp {
 
         document.querySelector('.search-match').addEventListener('click', () => {
             if (!this.isMatched) {
-                this.searchMatch();
-            }
-            else
-            {
+                if (!this.socket || this.socket.disconnected) {
+                    this.connectToServer();
+                } else {
+                    this.searchMatch();
+                }
+            } else {
+                const statusText = document.querySelector('.status-text');
                 statusText.textContent = 'Leave this session before searching for a new session';
             }
         });
     }
 
     connectToServer() {
+        if (this.socket) {
+            this.socket.disconnect();
+        }
+        
         this.socket = io('http://localhost:3000');
         
         this.socket.on('searching', () => {
@@ -115,8 +126,9 @@ class DrawingApp {
             const statusDot = document.querySelector('.status-dot');
             const statusText = document.querySelector('.status-text');
             statusDot.classList.remove('connected');
-            statusText.textContent = 'Your partner Disconneted. Click Search to find a new partner.';
+            statusText.textContent = 'Your partner Disconnected. Click Search to find a new partner.';
             this.isMatched = false;
+            this.clearCanvas();
         });
 
         this.socket.on('partnerLeftSession', () => {
@@ -125,11 +137,32 @@ class DrawingApp {
             statusDot.classList.remove('connected');
             statusText.textContent = 'Your partner left the session. Click Search to find a new partner.';
             this.isMatched = false;
+            this.clearCanvas();
         });
 
-        this.socket.on("disconnect", this.disconnect.bind(this));
+        this.socket.on('clearCanvas', () => {
+            this.clearCanvas();
+        });
+
+        this.socket.on('userCount', ({ total }) => {
+            const userCountElement = document.querySelector('.user-count');
+            userCountElement.textContent = `Users Online: ${total}`;
+        });
+
+        this.socket.on('disconnect', () => {
+            this.isMatched = false;
+            const statusDot = document.querySelector('.status-dot');
+            const statusText = document.querySelector('.status-text');
+            statusDot.classList.remove('connected');
+            statusText.textContent = 'Disconnected. Click Search to reconnect.';
+            const userCountElement = document.querySelector('.user-count');
+            userCountElement.textContent = 'Users Online: 0';
+        });
 
         this.socket.on('draw', this.handleServerDraw.bind(this));
+
+        // Start searching immediately after connecting
+        this.searchMatch();
     }
 
     searchMatch() {
@@ -196,20 +229,21 @@ class DrawingApp {
             this.isMatched = false;
             const statusDot = document.querySelector('.status-dot');
             const statusText = document.querySelector('.status-text');
+            const userCountElement = document.querySelector('.user-count');
             statusDot.classList.remove('connected');
-            statusText.textContent = 'Disconnected';
+            statusText.textContent = 'Disconnected. Click Search to reconnect.';
+            userCountElement.textContent = 'Users Online: 0';
         }
     }
 
-    leaveSession()
-    {    
+    leaveSession() {    
         if (this.socket) {
-            //this.socket.disconnect();
             this.isMatched = false;
             const statusDot = document.querySelector('.status-dot');
             const statusText = document.querySelector('.status-text');
             statusDot.classList.remove('connected');
-            statusText.textContent = 'You left the session.';
+            statusText.textContent = 'You left the session. Click Search to find a new partner.';
+            this.clearCanvas();
         }  
     }
 
@@ -225,5 +259,4 @@ class DrawingApp {
 
 document.addEventListener('DOMContentLoaded', () => {
     const app = new DrawingApp();
-    app.searchMatch(); // Start searching for a match immediately
 });

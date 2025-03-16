@@ -7,9 +7,16 @@ app.use(express.static('public'));
 
 const waitingUsers = new Set();
 const activeRooms = new Map(); // Maps roomId to array of user socket IDs
+let totalUsers = 0;
+
+function broadcastUserCount() {
+  io.emit('userCount', { total: totalUsers });
+}
 
 io.on('connection', (socket) => {
   console.log('New user connected:', socket.id);
+  totalUsers++;
+  broadcastUserCount();
 
   socket.on('searchMatch', () => {
     if (waitingUsers.has(socket.id)) return;
@@ -38,15 +45,27 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('clearCanvas', () => {
+    const roomId = Array.from(socket.rooms).find(room => room.startsWith('room_'));
+    if (roomId) {
+      socket.to(roomId).emit('clearCanvas');
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    totalUsers--;
+    broadcastUserCount();
     waitingUsers.delete(socket.id);
     
     for (const [roomId, users] of activeRooms) {
       if (users.includes(socket.id)) {
         const partner = users.find(id => id !== socket.id);
         if (partner) {
-          io.to(partner).emit('partnerDisconnected');
+          const partnerSocket = io.sockets.sockets.get(partner);
+          if (partnerSocket) {
+            partnerSocket.emit('partnerDisconnected');
+          }
         }
         activeRooms.delete(roomId);
         break;
@@ -55,6 +74,7 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('Server listening on port 3000');
+const port = process.env.PORT || 3000;
+server.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
